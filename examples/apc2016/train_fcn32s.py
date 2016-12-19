@@ -6,7 +6,7 @@ import chainer
 
 import fcn
 
-import dataset
+import datasets
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     max_iter = 100000
 
     trainer = fcn.trainers.fcn32s.get_trainer(
-        dataset_class=dataset.APC2016Dataset,
+        dataset_class=datasets.APC2016JSKDataset,
         gpu=gpu,
         max_iter=max_iter,
         out=out,
