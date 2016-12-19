@@ -84,12 +84,13 @@ class APC2016MITDataset(APC2016DatasetBase):
     def get_example(self, i):
         data_id = self.data_ids[i]
 
-        def expand_to_imsize(img, imsize):
+        def expand_to_imsize(img, imsize, fill=0):
             shape = imsize
             if img.ndim == 3:
                 shape = (imsize[0], imsize[1], img.shape[-1])
             h, w = img.shape[:2]
             img_exp = np.zeros(shape, dtype=img.dtype)
+            img_exp.fill(fill)
             img_exp[:h, :w] = img
             return img_exp
 
@@ -120,7 +121,7 @@ class APC2016MITDataset(APC2016DatasetBase):
             assert label.shape == (height, width)
             label = scipy.misc.imresize(label, size=scale, interp='nearest')
             label = label.astype(np.int32)
-            label = expand_to_imsize(label, imsize)
+            label = expand_to_imsize(label, imsize, fill=-1)
 
         return self.img_to_datum(img), label
 
