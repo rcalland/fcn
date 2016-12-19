@@ -15,12 +15,10 @@ class APC2016MITDataset(APC2016DatasetBase):
     def __init__(self, data_type):
         assert data_type in ('train', 'val')
         self.dataset_dir = chainer.dataset.get_dataset_directory('apc2016mit')
-        print('Getting data_ids...')
         if data_type == 'train':
             self.data_ids = self._get_data_ids_training()
         else:
             self.data_ids = self._get_data_ids_benchmark()
-        print('Done.')
 
     def _get_data_ids_benchmark(self):
         def yield_data_id_from_scene_dir(scene_dir):
@@ -95,6 +93,7 @@ class APC2016MITDataset(APC2016DatasetBase):
             # Label value is multiplied by 9:
             #   ex) 0: 0/9=0 (background), 54: 54/9=6 (dasani_bottle_water)
             label = scipy.misc.imread(segm_file, mode='L') / 9
+            label = label.astype(np.int32)
         img = scipy.misc.imread(rgb_file, mode='RGB')
         return self.img_to_datum(img), label
 
