@@ -4,8 +4,7 @@ import os.path as osp
 
 import chainer
 
-import fcn.data
-import fcn.util
+import fcn
 
 
 def main():
@@ -17,14 +16,14 @@ def main():
         url='https://drive.google.com/uc?id=0B9P1L--7Wd2vSV9oLTd1U2I3TDg',
         path=path,
     )
-    fcn.util.extract_file(path, to_directory=dataset_dir)
+    fcn.utils.extract_file(path, to_directory=dataset_dir)
 
     path = osp.join(dataset_dir, 'APC2016JSKseg/annotated.tgz')
     fcn.data.cached_download(
         url='https://drive.google.com/uc?id=0B9P1L--7Wd2vaExFU1AxWHlMdTg',
         path=path,
     )
-    fcn.util.extract_file(path, to_directory=dataset_dir)
+    fcn.utils.extract_file(path, to_directory=dataset_dir)
 
 
     dataset_dir = chainer.dataset.get_dataset_directory('apc2016mit')
@@ -36,8 +35,8 @@ def main():
     )
     path = osp.join(dataset_dir, 'benchmark.tgz')
     fcn.data.cached_download(
-        url='https://drive.google.com/uc?id=0B9P1L--7Wd2vOHhlbENra2REZDA'
-        path=path
+        url='https://drive.google.com/uc?id=0B9P1L--7Wd2vOHhlbENra2REZDA',
+        path=path,
         md5='15a6ff714fafb3950c0b0ff0161d6ef6',
     )
 
