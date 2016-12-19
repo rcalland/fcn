@@ -12,6 +12,8 @@ from base import APC2016DatasetBase
 
 class APC2016MITDataset(APC2016DatasetBase):
 
+    img_axis_size = 216
+
     def __init__(self, data_type):
         assert data_type in ('train', 'val')
         self.dataset_dir = chainer.dataset.get_dataset_directory('apc2016mit')
@@ -81,20 +83,45 @@ class APC2016MITDataset(APC2016DatasetBase):
 
     def get_example(self, i):
         data_id = self.data_ids[i]
+
+        def expand_to_imsize(img, imsize):
+            shape = imsize
+            if img.ndim == 3:
+                shape = (imsize[0], imsize[1], img.shape[-1])
+            h, w = img.shape[:2]
+            img_exp = np.zeros(shape, dtype=img.dtype)
+            img_exp[:h, :w] = img
+            return img_exp
+
+        rgb_file = data_id[0]
+        img = scipy.misc.imread(rgb_file, mode='RGB')
+        height, width = img.shape[:2]
+        scale = 1. * self.img_axis_size / max(height, width)
+        img = scipy.misc.imresize(img, size=scale, interp='bilinear')
+        imsize = (self.img_axis_size, self.img_axis_size)
+        img = expand_to_imsize(img, imsize)
+
         if len(data_id) == 3:
             # annotation by mask file
-            rgb_file, mask_file, cls_id = data_id
+            _, mask_file, cls_id = data_id
             mask = scipy.misc.imread(mask_file, mode='L')
+            assert mask.shape == (height, width)
+            mask = scipy.misc.imresize(mask, size=scale, interp='nearest')
+            # mask -> label
             label = np.zeros(mask.shape, dtype=np.int32)
             label[mask > 127] = cls_id
+            label = expand_to_imsize(label, imsize)
         else:
             # annotation by label file
-            rgb_file, segm_file = data_id
+            _, segm_file = data_id
             # Label value is multiplied by 9:
             #   ex) 0: 0/9=0 (background), 54: 54/9=6 (dasani_bottle_water)
             label = scipy.misc.imread(segm_file, mode='L') / 9
+            assert label.shape == (height, width)
+            label = scipy.misc.imresize(label, size=scale, interp='nearest')
             label = label.astype(np.int32)
-        img = scipy.misc.imread(rgb_file, mode='RGB')
+            label = expand_to_imsize(label, imsize)
+
         return self.img_to_datum(img), label
 
 
