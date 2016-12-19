@@ -18,6 +18,7 @@ def get_trainer(
         interval_log=10,
         interval_eval=1000,
         optimizer=None,
+        batch_size=1,
         ):
 
     if isinstance(gpu, list):
@@ -38,12 +39,13 @@ def get_trainer(
 
     if len(gpus) > 1:
         iter_train = chainer.iterators.MultiprocessIterator(
-            dataset_train, batch_size=len(gpus), shared_mem=10000000)
+            dataset_train, batch_size=batch_size * len(gpus),
+            shared_mem=10000000)
     else:
         iter_train = chainer.iterators.SerialIterator(
-            dataset_train, batch_size=1)
+            dataset_train, batch_size=batch_size)
     iter_val = chainer.iterators.SerialIterator(
-        dataset_val, batch_size=1, repeat=False, shuffle=False)
+        dataset_val, batch_size=batch_size, repeat=False, shuffle=False)
 
     # 2. model
     vgg_path = fcn.data.download_vgg16_chainermodel()

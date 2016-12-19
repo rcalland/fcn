@@ -9,6 +9,7 @@ from fcn.datasets.segmentation_dataset import SegmentationDatasetBase
 
 class PascalVOC2012SegmentationDataset(SegmentationDatasetBase):
 
+    img_axis_size = 216
     label_names = np.array([
         'background',
         'aeroplane',
@@ -56,14 +57,32 @@ class PascalVOC2012SegmentationDataset(SegmentationDatasetBase):
     def __len__(self):
         return len(self.files)
 
+    def _fill_to_square(self, img, fill=0):
+        if max(img.shape[:2]) > self.img_axis_size:
+            raise ValueError('Input image is too large: {}'.format(img.shape))
+        shape = (self.img_axis_size, self.img_axis_size)
+        if img.ndim == 3:
+            shape = (shape[0], shape[1], img.shape[2])
+        h, w = img.shape[:2]
+        img_exp = np.zeros(shape, dtype=img.dtype)
+        img_exp.fill(fill)
+        img_exp[:h, :w] = img
+        return img_exp
+
     def get_example(self, i):
         data_file = self.files[i]
         # load image
         img_file = data_file['img']
         img = scipy.misc.imread(img_file, mode='RGB')
-        datum = self.img_to_datum(img)
+        height, width = img.shape[:2]
+        scale = 1. * self.img_axis_size / max(height, width)
+        img = scipy.misc.imresize(img, size=scale, interp='bilinear')
+        img = self._fill_to_square(img)
         # load label
         label_rgb_file = data_file['label_rgb']
         label_rgb = scipy.misc.imread(label_rgb_file, mode='RGB')
         label = self.label_rgb_to_32sc1(label_rgb)
-        return datum, label
+        label = scipy.misc.imresize(label, size=scale, interp='nearest')
+        label = label.astype(np.int32)
+        label = self._fill_to_square(label, fill=-1)
+        return self.img_to_datum(img), label
