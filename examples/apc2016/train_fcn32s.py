@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
+import datetime
+import os.path as osp
 
 import chainer
 
@@ -13,7 +15,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', default='jsk', choices=('jsk', 'mit'))
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('-o', '--out', default='logs/latest')
+    parser.add_argument('-o', '--out')
     parser.add_argument('--resume')
     args = parser.parse_args()
 
@@ -21,9 +23,15 @@ def main():
         dataset_class = datasets.APC2016JSKDataset
     else:
         dataset_class = datasets.APC2016MITDataset
-    gpu = args.gpu
     out = args.out
     resume = args.resume
+    if out is None:
+        if resume:
+            out = osp.dirname(resume)
+        else:
+            timestamp = datetime.datetime.now().isoformat()
+            out = osp.join('logs', timestamp)
+    gpu = args.gpu
     max_iter = 100000
 
     trainer = fcn.trainers.fcn32s.get_trainer(
