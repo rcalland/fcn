@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import os.path as osp
 import sys
 import tempfile
@@ -8,6 +9,7 @@ import chainer
 from chainer.training import extensions
 import numpy as np
 import skimage.color
+import yaml
 
 import fcn
 
@@ -21,6 +23,7 @@ def get_trainer(
         interval_log=10,
         interval_eval=1000,
         optimizer=None,
+        batch_size=1,
         ):
 
     if isinstance(gpu, list):
@@ -36,18 +39,38 @@ def get_trainer(
               file=sys.stderr)
         quit(1)
 
+    # dump params
+    params = {
+        'dataset_class': dataset_class.__name__,
+        'gpu': {'ids': gpu},
+        'batch_size': batch_size,
+        'resume': resume,
+        'optimizer': {
+            'name': optimizer.__class__.__name__,
+            'params': optimizer.__dict__,
+        }
+    }
+    print('>' * 20 + ' Parameters ' + '>' * 20)
+    yaml.safe_dump(params, sys.stderr, default_flow_style=False)
+    print('<' * 20 + ' Parameters ' + '<' * 20)
+    if not osp.exists(out):
+        os.makedirs(out)
+    yaml.safe_dump(params, open(osp.join(out, 'param.yaml'), 'w'),
+                   default_flow_style=False)
+
     # 1. dataset
     dataset_train = dataset_class('train')
     dataset_val = dataset_class('val')
 
     if len(gpus) > 1:
         iter_train = chainer.iterators.MultiprocessIterator(
-            dataset_train, batch_size=len(gpus), shared_mem=10000000)
+            dataset_train, batch_size=batch_size*len(gpus),
+            shared_mem=10000000)
     else:
         iter_train = chainer.iterators.SerialIterator(
-            dataset_train, batch_size=1)
+            dataset_train, batch_size=batch_size)
     iter_val = chainer.iterators.SerialIterator(
-        dataset_val, batch_size=1, repeat=False, shuffle=False)
+        dataset_val, batch_size=batch_size, repeat=False, shuffle=False)
 
     # 2. model
     vgg_path = fcn.data.download_vgg16_chainermodel()
@@ -87,7 +110,7 @@ def get_trainer(
         fcn.training.extensions.TestModeEvaluator(
             iter_val, model, device=gpus[0]),
         trigger=(interval_eval, 'iteration'),
-        invoke_before_training=True,
+        invoke_before_training=False,
     )
 
     def visualize_segmentation(target):

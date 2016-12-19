@@ -14,7 +14,7 @@ import datasets
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', default='jsk', choices=('jsk', 'mit'))
-    parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--gpus', type=int, nargs='+', default=[0])
     parser.add_argument('-o', '--out')
     parser.add_argument('--resume')
     args = parser.parse_args()
@@ -31,18 +31,18 @@ def main():
         else:
             timestamp = datetime.datetime.now().isoformat()
             out = osp.join('logs', timestamp)
-    gpu = args.gpu
-    max_iter = 100000
+    gpus = args.gpus
 
     trainer = fcn.trainers.fcn32s.get_trainer(
         dataset_class=dataset_class,
-        gpu=gpu,
-        max_iter=max_iter,
+        gpu=gpus,
         out=out,
         resume=resume,
+        max_iter=100000,  # num_feed = iteration * batch_size * num_gpu
         interval_log=10,
-        interval_eval=100,
+        interval_eval=1000,
         optimizer=chainer.optimizers.Adam(alpha=1e-5),
+        batch_size=10,
     )
     trainer.run()
 
