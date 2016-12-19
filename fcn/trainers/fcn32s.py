@@ -1,4 +1,7 @@
+from __future__ import print_function
+
 import os.path as osp
+import sys
 import tempfile
 
 import chainer
@@ -29,8 +32,9 @@ def get_trainer(
         out = tempfile.mktemp()
 
     if not resume and osp.exists(out):
-        raise RuntimeError('Result dir already exists: {}'
-                           .format(osp.abspath(out)))
+        print('Result dir already exists: {}'.format(osp.abspath(out)),
+              file=sys.stderr)
+        quit(1)
 
     # 1. dataset
     dataset_train = dataset_class('train')
